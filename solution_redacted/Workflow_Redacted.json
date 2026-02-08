@@ -1,0 +1,437 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "CONNECTION_REFERENCE"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_microsoftcopilotstudio": {
+        "api": {
+          "name": "shared_microsoftcopilotstudio"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "CONNECTION_REFERENCE"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_commondataserviceforapps": {
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "CONNECTION_REFERENCE"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "CONNECTION_REFERENCE"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "CONNECTION_REFERENCE"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_new_email_arrives_(V3)": {
+          "type": "OpenApiConnectionNotification",
+          "inputs": {
+            "parameters": {
+              "to": "shared-mailbox@company.com",
+              "folderPath": "Id::AQMkADk4ZWI5ZjZmLTVlMWItNDM2MS1iN2M0LTU1AGRjN2VjYjI5MzEALgAAA_xGsBJDzsdFpvfApasWOBoBAB_D--hHNEhJuNNDxguHVR4AAAIBDAAAAA=="
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "OnNewEmailV3",
+              "connectionName": "shared_office365"
+            }
+          },
+          "metadata": {
+            "Id::AAMkAGI5OWE0NmUxLTUxNjYtNDljMi1iZTVmLWIzOWRmZDc1ZjQ2ZAAuAAAAAACOMKLv6f6BQrFXAVX7MqLuAQBlfxm7FQORSbypBcVN6S0xAAAAAAEMAAA=": "Inbox",
+            "operationMetadataId": "00000000-0000-0000-0000-000000000000",
+            "Id::AQMkADk4ZWI5ZjZmLTVlMWItNDM2MS1iN2M0LTU1AGRjN2VjYjI5MzEALgAAA_xGsBJDzsdFpvfApasWOBoBAB_D--hHNEhJuNNDxguHVR4AAAIBDAAAAA==": "Inbox"
+          }
+        }
+      },
+      "actions": {
+        "Terminate": {
+          "type": "Terminate",
+          "inputs": {
+            "runStatus": "Succeeded"
+          },
+          "runAfter": {
+            "For_each": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "00000000-0000-0000-0000-000000000000"
+          }
+        },
+        "For_each": {
+          "type": "Foreach",
+          "foreach": "@triggerOutputs()?['body/value']",
+          "actions": {
+            "Send_Email_Payload_To_Agent": {
+              "type": "OpenApiConnectionWebhook",
+              "inputs": {
+                "parameters": {
+                  "Copilot": "CONNECTION_REFERENCE",
+                  "body/message": "@json(concat(\r\n  '{\"action\":\"AskHR_IncomingEmail\",',\r\n  '\"messageId\":\"', coalesce(item()?['id'], ''), '\",',\r\n  '\"conversationId\":\"', coalesce(item()?['conversationId'], ''), '\",',\r\n  '\"internetMessageId\":\"', coalesce(item()?['internetMessageId'], ''), '\",',\r\n  '\"receivedTime\":\"', coalesce(item()?['receivedDateTime'], ''), '\",',\r\n  '\"hasAttachments\":', if(equals(coalesce(item()?['hasAttachments'], false), true), 'true', 'false'), ',',\r\n  '\"subject\":\"', replace(replace(replace(coalesce(item()?['subject'], ''), '\"', '\\\"'), '\\r', ' '), '\\n', ' '), '\",',\r\n  '\"from\":\"', replace(replace(replace(string(coalesce(item()?['from'], '')), '\"', '\\\"'), '\\r', ' '), '\\n', ' '), '\",',\r\n  '\"toRecipients\":\"', replace(replace(replace(string(coalesce(item()?['toRecipients'], '')), '\"', '\\\"'), '\\r', ' '), '\\n', ' '), '\",',\r\n  '\"ccRecipients\":\"', replace(replace(replace(string(coalesce(item()?['ccRecipients'], '')), '\"', '\\\"'), '\\r', ' '), '\\n', ' '), '\",',\r\n  '\"replyTo\":\"', replace(replace(replace(string(coalesce(item()?['replyTo'], '')), '\"', '\\\"'), '\\r', ' '), '\\n', ' '), '\",',\r\n  '\"bodyPreview\":\"', replace(replace(replace(coalesce(item()?['bodyPreview'], ''), '\"', '\\\"'), '\\r', ' '), '\\n', ' '), '\"',\r\n  '}'\r\n))\r\n"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftcopilotstudio",
+                  "operationId": "ExecuteCopilotAsyncV2",
+                  "connectionName": "shared_microsoftcopilotstudio"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "00000000-0000-0000-0000-000000000000"
+              }
+            },
+            "ReplyText": {
+              "type": "Compose",
+              "inputs": "@outputs('Send_Email_Payload_To_Agent')?['body/lastResponse']",
+              "runAfter": {
+                "Run_a_prompt": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "FolderValue": {
+              "type": "Compose",
+              "inputs": "@if(\r\n  contains(outputs('ReplyText'), 'Folder:'),\r\n  trim(\r\n    first(\r\n      split(\r\n        last(split(outputs('ReplyText'), 'Folder:')),\r\n        'Category:'\r\n      )\r\n    )\r\n  ),\r\n  'INBOX'\r\n)\r\n",
+              "runAfter": {
+                "ReplyText": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "CategoryValue": {
+              "type": "Compose",
+              "inputs": "@trim(first(split(first(split(last(split(outputs('ReplyText'), 'Category:')), 'SubCategory:')), '\\n')))",
+              "runAfter": {
+                "FolderValue": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "SubCategoryValue": {
+              "type": "Compose",
+              "inputs": "@trim(\r\n  last(\r\n    split(outputs('ReplyText'), 'SubCategory:')\r\n  )\r\n)\r\n",
+              "runAfter": {
+                "CategoryValue": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "FolderKey": {
+              "type": "Compose",
+              "inputs": "@toLower(outputs('FolderValue'))\r\n",
+              "runAfter": {
+                "SubCategoryValue": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Run_a_prompt": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "recordId": "00000000-0000-0000-0000-000000000000",
+                  "item/requestv2/Text_20input": "@outputs('Send_Email_Payload_To_Agent')?['body/lastResponse']",
+                  "item/requestv2/additionalContext": "@base64('This is an email draft reply')"
+                },
+                "host": {
+                  "apiId": "providers/Microsoft.ProcessSimple/operationGroups/aibuilder",
+                  "operationId": "aibuilderpredict_customprompt",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              },
+              "runAfter": {
+                "Send_Email_Payload_To_Agent": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Category_Management": {
+              "type": "If",
+              "expression": {
+                "or": [
+                  {
+                    "equals": [
+                      "@if(\r\n  empty(trim(string(coalesce(outputs('CategoryValue'), '')))),\r\n  'AskHR',\r\n  trim(string(outputs('CategoryValue')))\r\n)",
+                      "NONE"
+                    ]
+                  },
+                  {
+                    "startsWith": [
+                      "@if(\r\n  empty(trim(string(coalesce(outputs('CategoryValue'), '')))),\r\n  'AskHR',\r\n  trim(string(outputs('CategoryValue')))\r\n)",
+                      "Sorry"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Assigns_No_Knowledge_-_Agent_Category": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "messageId": "@item()?['id']",
+                      "category": "No Knowledge"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "AssignCategory",
+                      "connectionName": "shared_office365-1"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Assigns_an_Outlook_category": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "messageId": "@item()?['id']",
+                        "category": "@trim(first(split(string(outputs('CategoryValue')), ' [')))\r\n"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                        "operationId": "AssignCategory",
+                        "connectionName": "shared_office365-1"
+                      }
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Draft_an_email_message": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Folder_Management": {
+              "type": "If",
+              "expression": {
+                "or": [
+                  {
+                    "equals": [
+                      "@toLower(trim(string(coalesce(outputs('FolderKey'), ''))))",
+                      "NONE"
+                    ]
+                  },
+                  {
+                    "equals": [
+                      "@toLower(trim(string(coalesce(outputs('FolderKey'), ''))))",
+                      "AskHR"
+                    ]
+                  },
+                  {
+                    "equals": [
+                      "@toLower(trim(string(coalesce(outputs('FolderKey'), ''))))",
+                      "askhr"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Move_email_to_No_Knowledge_-_Agent": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "messageId": "@item()?['id']",
+                      "folderPath": "Id::AAMkADk4ZWI5ZjZmLTVlMWItNDM2MS1iN2M0LTU1ZGM3ZWNiMjkzMQAuAAAAAADsRrASQ87HRab3wKWrFjgaAQAfg--4RzRISbjTQ8YLh1UeAAOo0TyGAAA=",
+                      "mailboxAddress": "shared-mailbox@company.com"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "MoveV2",
+                      "connectionName": "shared_office365-1"
+                    }
+                  },
+                  "metadata": {
+                    "Id::AAMkADk4ZWI5ZjZmLTVlMWItNDM2MS1iN2M0LTU1ZGM3ZWNiMjkzMQAuAAAAAADsRrASQ87HRab3wKWrFjgaAQAfg--4RzRISbjTQ8YLh1UeAAOo0TyGAAA=": "Agent - No Knowledge"
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Move_email_To_Folder": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "messageId": "@item()?['id']",
+                        "folderPath": "@if(\r\n  or(\r\n    equals(toLower(trim(coalesce(string(outputs('FolderKey')), ''))), 'askhr'),\r\n    equals(toLower(trim(coalesce(string(outputs('FolderKey')), ''))), 'none'),\r\n    equals(trim(coalesce(string(outputs('FolderKey')), '')), '')\r\n  ),\r\n  'Agent - No Knowledge',\r\n  trim(string(outputs('FolderKey')))\r\n)\r\n",
+                        "mailboxAddress": "shared-mailbox@company.com"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                        "operationId": "MoveV2",
+                        "connectionName": "shared_office365-1"
+                      }
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "SubCategory_Management": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_item": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://tenant.sharepoint.com/sites/SaaSOperations",
+                  "table": "00000000-0000-0000-0000-000000000000",
+                  "item/Title": "@substring(coalesce(string(item()?['subject']), ''), 0, min(250, length(coalesce(string(item()?['subject']), ''))))\r\n",
+                  "item/ReceivedDate": "@item()?['receivedDateTime']",
+                  "item/Category": "@outputs('CategoryValue')\r\n",
+                  "item/SubCategory": "@outputs('SubCategoryValue')\r\n",
+                  "item/From": "@coalesce(string(item()?['from']), '')\r\n",
+                  "item/To": "@if(\r\n  equals(length(trim(coalesce(string(item()?['toRecipients']), ''))), 0),\r\n  '',\r\n  substring(\r\n    trim(coalesce(string(item()?['toRecipients']), '')),\r\n    0,\r\n    min(200, length(trim(coalesce(string(item()?['toRecipients']), ''))))\r\n  )\r\n)\r\n",
+                  "item/EmailBody": "@coalesce(string(item()?['body']), item()?['bodyPreview'], '')\r\n",
+                  "item/MessageID": "@item()?['id']",
+                  "item/{ContentType}/Id": "0x0100282A1B3959313E4F98B6B9DCA4B8585200FC9F17FFE0E021489BD305CFE27B713D"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "PostItem",
+                  "connectionName": "shared_sharepointonline-1"
+                }
+              },
+              "runAfter": {
+                "Folder_Management": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "SubCategory_Management": {
+              "type": "If",
+              "expression": {
+                "or": [
+                  {
+                    "equals": [
+                      "@if(\r\n  empty(trim(string(coalesce(outputs('CategoryValue'), '')))),\r\n  'AskHR',\r\n  trim(string(outputs('CategoryValue')))\r\n)",
+                      "NONE"
+                    ]
+                  },
+                  {
+                    "startsWith": [
+                      "@if(\r\n  empty(trim(string(coalesce(outputs('CategoryValue'), '')))),\r\n  'AskHR',\r\n  trim(string(outputs('CategoryValue')))\r\n)",
+                      "Sorry"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Assigns_No_Knowledge_-_Agent_SubCategory": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "messageId": "@item()?['id']",
+                      "category": "No Knowledge"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "AssignCategory",
+                      "connectionName": "shared_office365-1"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Assigns_an_Outlook_SubCategory": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "messageId": "@item()?['id']",
+                        "category": "@if(\r\n  or(\r\n    equals(outputs('SubCategoryValue'), null),\r\n    equals(trim(string(outputs('SubCategoryValue'))), '')\r\n  ),\r\n  'AskHR',\r\n  trim(string(outputs('SubCategoryValue')))\r\n)\r\n"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                        "operationId": "AssignCategory",
+                        "connectionName": "shared_office365-1"
+                      }
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Category_Management": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Draft_an_email_message": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "draftMessage/To": "@item()?['from']",
+                  "draftMessage/Subject": "@item()?['subject']",
+                  "draftMessage/Body": "<div style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000;\">\n\n    @{outputs('Run_a_prompt')?['body/responsev2/predictionOutput/text']}\n\n  </div>\n\n  <br>\n\n  <hr style=\"border: 0; border-top: 1px solid #C8C8C8; margin: 18px 0;\">\n\n  <br>\n\n  <p class=\"editor-paragraph\" style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000; margin:0;\">\n    <strong>From:</strong>\n    <span style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000;\">@{coalesce(string(item()?['from']), '')}</span><br>\n    <strong>Sent:</strong>\n    <span style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000;\">@{coalesce(string(item()?['receivedDateTime']), '')}</span><br>\n    <strong>To:</strong>\n    <span style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000;\">@{coalesce(string(item()?['toRecipients']), '')}</span><br>\n    <strong>Cc:</strong>\n    <span style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000;\">@{coalesce(string(item()?['ccRecipients']), '')}</span><br>\n    <strong>Subject:</strong>\n    <span style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000;\">@{coalesce(string(item()?['subject']), '')}</span>\n  </p>\n\n  <br>\n\n  <div style=\"font-family: Aptos, Calibri, sans-serif; font-size: 16px; color: #000000;\">\n    @{replace(replace(replace(coalesce(string(item()?['body']), item()?['bodyPreview'], ''), '\\r\\n', '<br/>'), '\\n', '<br/>'), '\\r', '<br/>')}\n  </div>\n\n",
+                  "draftMessage/From": "shared-mailbox@company.com",
+                  "draftMessage/Cc": "@items('For_each')?['ccRecipients']",
+                  "draftMessage/Importance": "Normal",
+                  "messageId": "@items('For_each')?['id']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "DraftEmail",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "FolderKey": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "00000000-0000-0000-0000-000000000000"
+          }
+        }
+      },
+      "description": "Trigger your agent with certain message upon event: When a new email arrives (V3)."
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
